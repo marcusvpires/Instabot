@@ -8,6 +8,30 @@ async function removeSaveInfoPopup(page) {
   }
 }
 
+async function likeFeed() {
+  let button = document.querySelector('svg[aria-label="Curtir"][width="24"]');
+  if (!button) {
+    window.scrollTo(0, document.body.scrollHeight);
+    likeFeed();
+    return;
+  }
+  for (let ix = 0; ix < 10; ix++) {
+    button = button.parentElement;
+    if (button.tagName === "BUTTON") {
+      break;
+    }
+  }
+  button.scrollIntoView({ block: "center", inline: "nearest" });
+  console.log("Like post:", button);
+  button.click();
+}
+
+function delay(time) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, time);
+  });
+}
+
 async function login(page) {
   await page.goto("https://www.instagram.com/accounts/login/");
   await page.waitForSelector('input[name="username"]');
@@ -39,4 +63,20 @@ async function login(page) {
     await removeSaveInfoPopup(page);
   }
 
+  await delay(8000);
+  await removeSaveInfoPopup(page);
+
+  await delay(4000);
+  await page.evaluate(likeFeed);
+  await delay(4000);
+  await page.evaluate(likeFeed);
+  await delay(4000);
+  await page.evaluate(likeFeed);
+  await delay(4000);
+  await page.evaluate(likeFeed);
+  await delay(4000);
+  await page.evaluate(likeFeed);
+
+  console.log("Script finished");
+  //await browser.close();
 })();
