@@ -36,6 +36,7 @@ async function login(page) {
     await page.waitForNavigation();
 
     await delay(8000);
+    await removeSaveInfoPopup(page);
   }
 
 })();
