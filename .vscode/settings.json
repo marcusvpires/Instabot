@@ -1,5 +1,17 @@
 {
   "files.exclude": {
     "node_modules": true
-  }
+  },
+  "cSpell.words": [
+    "csrftoken",
+    "Curtidas",
+    "Curtir",
+    "EAALAA",
+    "nrcb",
+    "sessionid",
+    "Tajbgl",
+    "Upvpn",
+    "VXUH",
+    "Ycqg"
+  ]
 }

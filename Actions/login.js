@@ -15,7 +15,7 @@ async function login(page) {
   }
   await page.waitForSelector("button");
   await button.contain(page, "Agora não");
-  console.info("Login finished")
+  console.info("-- Login")
 }
 
 async function setCookies(page) {

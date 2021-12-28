@@ -1,5 +1,7 @@
+const delay = require("../Assets/delay");
+
 async function likeFeed(page) {
-  page.evaluate(() => {
+  const response = await page.evaluate(() => {
     function parentButton(element, maxParentsPassed = 10) {
       for (let ix = 0; ix < maxParentsPassed; ix++) {
         element = element.parentElement;
@@ -11,14 +13,17 @@ async function likeFeed(page) {
     let query = document.querySelector('svg[aria-label="Curtir"][width="24"]');
     if (!query) {
       window.scrollTo(0, document.body.scrollHeight);
-      likeFeed();
-      return;
+      return { message: "Like button does not found" };
     }
-    query = parentButton(query);
-    query.scrollIntoView({ block: "center", inline: "nearest" });
-    console.log("Like post:", query);
-    query.click();
+    let likeButton = parentButton(query);
+    likeButton.scrollIntoView({ block: "center", inline: "nearest" });
+    likeButton.click();
+    return { message: "-- Like feed", likeButton: likeButton };
   });
+  if (response.likeButton) {
+    return response.likeButton;
+  }
+  delay(4000);
 }
 
 module.exports = likeFeed;
