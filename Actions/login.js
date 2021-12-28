@@ -1,6 +1,6 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs").promises;
-const findButton = require('../Assets/query');
+const { button } = require('../Assets/query');
 const delay = require("../Assets/delay")
 
 async function login(page) {
@@ -14,7 +14,8 @@ async function login(page) {
     await setCookies(page);
   }
   await page.waitForSelector("button");
-  await findButton(page, "Agora não");
+  await button.contain(page, "Agora não");
+  console.info("Login finished")
 }
 
 async function setCookies(page) {
@@ -26,7 +27,7 @@ async function setCookies(page) {
   await page.waitForNavigation();
 
   await page.waitForSelector("button");
-  await findButton(page, "Agora não");
+  await button.contain(page, "Agora não");
   await page.waitForNavigation();
 
   const cookies = await page.cookies(); 
