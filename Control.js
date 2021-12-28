@@ -93,22 +93,35 @@ async function openLikedByList(page) {
 
 async function scrapNames(page) {
   let names = []
-  const profileNames = await page.evaluate(() => {
-    const likedBySection = document.querySelector('div[aria-label="Curtidas"]');
-    const profiles = likedBySection.querySelectorAll("span > a");
-    const profileNames = Object.values(profiles).map((element) => {
-      const name = element.attributes.title;
-      element.scrollIntoView({ block: "center", inline: "nearest" });
-      element.remove();
-      return name;
+  let counter = 0
+  while (true) {
+    if (counter > 10) {
+      console.log(`-- Scrap loop limit <Total ${names.length}>`)
+      break
+    }
+    console.log('   Counter:', counter)
+    const profileNames = await page.evaluate(() => {
+      const likedBySection = document.querySelector('div[aria-label="Curtidas"]');
+      const profiles = likedBySection.querySelectorAll("span > a");
+      const profileNames = Object.values(profiles).map((element) => {
+        const name = element.attributes.title;
+        element.scrollIntoView({ block: "center", inline: "nearest" });
+        element.remove();
+        return name;
+      });
+      return profileNames
     });
-    return profileNames
-  });
-  names.push(...profileNames)
-  if (profileNames.length > 0) { console.log(`-- Scrap ${profileNames.length} new profiles <Total ${names.length}>`) }
-  else { console.log(`-- Scrap all profiles <Total ${names.length}>`) }
-  
-  delay(4)
+    names.push(...profileNames)
+    if (profileNames.length > 0) {
+      console.log(`-- Scrap ${profileNames.length} new profiles <Total ${names.length}>`)
+    }
+    else {
+      console.log(`-- Scrap all profiles <Total ${names.length}>`)
+      break;
+    }
+    counter++
+    await delay(4)
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -116,7 +129,7 @@ async function scrapNames(page) {
 /* -------------------------------------------------------------------------- */
 
 function delay(time) {
-  console.log('-- delay:', (Number(time) * 1000) + 'ms')
+  console.log('   delay:', (Number(time) * 1000) + 'ms')
   return new Promise(function (resolve) {
     setTimeout(resolve, (Number(time) * 1000));
   });
