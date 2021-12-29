@@ -7,8 +7,11 @@ const fs = require("fs").promises;
 
 const userName = "lxl3ehl53";
 const password = "asdf9876";
+const delayNextProfile = 10
+const delayNextPost = 5
 const minProfiles = 150;
 const maxLikes = 150
+const headless = false
 let likeCounter = 0
 
 /* -------------------------------------------------------------------------- */
@@ -18,11 +21,13 @@ let likeCounter = 0
 async function control() {
   try {
     log.header();
-    const browser = await puppeteer.launch({ headless: false });
+    console.time("| Runtime");
+    const browser = await puppeteer.launch({ headless: headless });
     const page = await browser.newPage();
     await openInstagram(page);
     await scrapProfiles(page);
     await likeProfiles(page);
+    console.timeEnd("| Runtime");
   } catch (err) {
     console.group('\x1b[31m' + err.message + '\x1b[0m')
     console.log(err)
@@ -53,6 +58,7 @@ async function openInstagram(page) {
   await delay(2);
   await buttonContain(page, "Agora não");
   log.info("Close notification popup");
+  console.timeLog("| Runtime");
 }
 
 async function login(page) {
@@ -85,6 +91,7 @@ async function scrapProfiles(page) {
   for (let index = 0; index < 10; index++) {
     profiles.push(...(await scrapArticleProfiles(page)));
     log.info(`Total: ${profiles.length}`);
+    console.timeLog("| Runtime");
     if (profiles.length < minProfiles) {
       log.info(`Restart scrap profiles`);
     } else break;
@@ -130,7 +137,7 @@ async function scrapNames(page) {
       `Section: ${profiles.length} -- ${sectionProfiles.length} new saved profile names`
     );
     if (sectionProfiles.length <= 0) break;
-    await delay(4);
+    await delay(5);
   }
   return profiles;
 }
@@ -155,12 +162,14 @@ async function likeProfiles(page) {
   for (var index = 0; index < profiles.length; index++) {
     log.title(`Like profile ${index} <${profiles[index]}>`);
     await page.goto("https://www.instagram.com/" + profiles[index]);
-    await delay(5);
+    await delay(delayNextProfile);
     await likeProfile(page);
     if (likeCounter >= maxLikes) {
       console.title(`Maximum number of likes reached <${likeCounter}/${maxLikes}>`)
+      console.timeLog("| Runtime");
       return
     }
+    console.timeLog("| Runtime");
   }
 }
 
@@ -171,7 +180,7 @@ async function likeProfile(page) {
   if (followers && Number(followers.title) < 300) return;
   for (var index = 0; index < posts.length; index++) {
     await page.goto(posts[index]);
-    await delay(4);
+    await delay(delayNextPost);
     let liked = await page.evaluate(likePost);
     if (liked) {
       likeCounter++; 
