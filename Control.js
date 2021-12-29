@@ -5,14 +5,14 @@ const fs = require("fs").promises;
 /*                                  Variables                                 */
 /* -------------------------------------------------------------------------- */
 
-const userName = "lxl3ehl53";
+const userName = "bot.autolike.seguedevolta";
 const password = "asdf9876";
-const delayNextProfile = 10
-const delayNextPost = 5
-const minProfiles = 150;
-const maxLikes = 150
-const headless = false
-let likeCounter = 0
+const delayNextProfile = 10;
+const delayNextPost = 5;
+const minProfiles = 50;
+const maxLikes = 100; // Max 200 por dia
+const headless = false;
+let likeCounter = 0;
 
 /* -------------------------------------------------------------------------- */
 /*                                   Control                                  */
@@ -29,9 +29,9 @@ async function control() {
     await likeProfiles(page);
     console.timeEnd("| Runtime");
   } catch (err) {
-    console.group('\x1b[31m' + err.message + '\x1b[0m')
-    console.log(err)
-    console.groupEnd()
+    console.group("\x1b[31m" + err.message + "\x1b[0m");
+    console.log(err);
+    console.groupEnd();
   }
 }
 
@@ -88,7 +88,7 @@ async function login(page) {
 async function scrapProfiles(page) {
   let profiles = [];
   if (minProfiles <= 0) return [];
-  for (let index = 0; index < 10; index++) {
+  for (let index = 0; index < 500; index++) {
     profiles.push(...(await scrapArticleProfiles(page)));
     log.info(`Total: ${profiles.length}`);
     console.timeLog("| Runtime");
@@ -104,28 +104,37 @@ async function scrapProfiles(page) {
 }
 
 async function scrapArticleProfiles(page) {
-  log.title("Scrap profile names");
-  await page.evaluate(openProfileList);
-  log.info("Open list of profiles that like the post");
-  await delay(5);
-  const profileNames = await scrapNames(page);
-  return profileNames;
+  try {
+    log.title("Scrap profile names");
+    await page.evaluate(openProfileList);
+    log.info("Open list of profiles that like the post");
+    await delay(5);
+    const profileNames = await scrapNames(page);
+    return profileNames;
+  } catch (err) {
+    console.log("\x1b[31m| Error while scrapping article profiles\x1b[0m");
+    console.log("\x1b[31m| " + err.message + "\x1b[0m");
+    console.log("\x1b[31m| Restarting instagram page\x1b[0m");
+    await openInstagram(page);
+    await delay(5);
+    return []
+  }
 }
 
-async function openProfileList() {
-  const article = document.querySelector("article");
+function openProfileList() {
+  const article = document.querySelector("article[role='presentation']");
   article.scrollIntoView({ block: "center", inline: "nearest" });
   let button = article.querySelector('svg[aria-label="Curtir"][width="24"]');
   if (button) {
-    for (let index = 0; index < 10; index++) {
+    for (let index = 0; index < 4; index++) {
       button = button.parentElement;
       if (button.tagName === "BUTTON") break;
     }
     button.click();
   }
   const listButton = article.querySelector('a[href*="liked_by"]');
-  if (listButton) listButton.click();
-  article.remove();
+  if (button && listButton) listButton.click();
+  article.attributes.role.value = "marked"
 }
 
 async function scrapNames(page) {
@@ -139,6 +148,7 @@ async function scrapNames(page) {
     if (sectionProfiles.length <= 0) break;
     await delay(5);
   }
+  await page.evaluate(closeProfileList);
   return profiles;
 }
 
@@ -154,6 +164,19 @@ function scrapSectionNames() {
   });
 }
 
+function closeProfileList() {
+  const likedBySection = document.querySelector('div[aria-label="Curtidas"]');
+  if (!likedBySection) return;
+  var button = likedBySection.querySelector('svg[aria-label="Fechar"]');
+  if (button) {
+    for (let index = 0; index < 10; index++) {
+      button = button.parentElement;
+      if (button.tagName === "BUTTON") break;
+    }
+    button.click();
+  }
+}
+
 /* ------------------------------ Like profiles ----------------------------- */
 
 async function likeProfiles(page) {
@@ -165,9 +188,9 @@ async function likeProfiles(page) {
     await delay(delayNextProfile);
     await likeProfile(page);
     if (likeCounter >= maxLikes) {
-      console.title(`Maximum number of likes reached <${likeCounter}/${maxLikes}>`)
+      log.title(`Maximum number of likes reached <${likeCounter}/${maxLikes}>`);
       console.timeLog("| Runtime");
-      return
+      return;
     }
     console.timeLog("| Runtime");
   }
@@ -183,25 +206,23 @@ async function likeProfile(page) {
     await delay(delayNextPost);
     let liked = await page.evaluate(likePost);
     if (liked) {
-      likeCounter++; 
+      likeCounter++;
       log.info(`C:${likeCounter} - Post liked: ${posts[index]}`);
-      if (likeCounter >= maxLikes) return
+      if (likeCounter >= maxLikes) return;
     }
     await delay(4);
   }
 }
 
 function likePost() {
-  let button = document.querySelector(
-    'svg[aria-label="Curtir"][width="24"]'
-  );
+  let button = document.querySelector('svg[aria-label="Curtir"][width="24"]');
   if (!button) return;
   for (let index = 0; index < 10; index++) {
     button = button.parentElement;
     if (button.tagName === "BUTTON") break;
   }
   button.click();
-  return true
+  return true;
 }
 
 function scrapPosts() {
@@ -213,7 +234,7 @@ function scrapPosts() {
     if (posts.length > 7) posts.length = 7;
     return [posts, followers];
   } catch (err) {
-    return [[], 0]
+    return [[], 0];
   }
 }
 
@@ -253,4 +274,4 @@ const log = {
   },
 };
 
-control(5)
+control(5);
