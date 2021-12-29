@@ -7,9 +7,16 @@ async function controller() {
   const page = await browser.newPage();
   await login(page);
   await delay(2);
-  await scrapProfileLinks(page);
+  /*   
+  for (let ix = 0; ix < 10; ix++) {
+    await scrapProfileLinks(page);
+    await delay(5)
+    console.log("\n= Restart scrap profile links");
+  } 
+  */
+  await likeProfiles(page)
   // await browser.close();
-  console.log("-- Script end");
+  console.log("\n= Script end");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -20,7 +27,7 @@ async function controller() {
 
 async function login(page) {
   try {
-    console.log("- Login")
+    console.log("\n- Login")
     console.log("  Check previous cookies")
     const cookiesString = await fs.readFile("./Storage/cookies.json");
     const cookies = JSON.parse(cookiesString);
@@ -35,7 +42,7 @@ async function login(page) {
   await delay(2);
   console.log('  Close notification popup')
   await buttonContain(page, "Agora não");
-  console.info("- Login complete");
+  console.info("\n- Login complete");
 }
 
 async function setCookies(page) {
@@ -62,10 +69,15 @@ async function setCookies(page) {
 /* --------------------------- Scrap profile links -------------------------- */
 
 async function scrapProfileLinks(page) {
-  console.log('- Scrap profile links')
+  console.log('\n- Scrap profile links')
   await openLikedByList(page);
   await delay(5)
-  await scrapNames(page)
+  const profileNames = await scrapNames(page)
+  console.log('\n- Storage names in (./Storage/profiles.json)')
+  await fs.writeFile(
+    "./Storage/profiles.json",
+    JSON.stringify(profileNames, null, 2)
+  );
 }
 
 async function openLikedByList(page) {
@@ -98,7 +110,7 @@ async function openLikedByList(page) {
 }
 
 async function scrapNames(page) {
-  console.log('- Start names scrap')
+  console.log('\n- Start names scrap')
   let names = []
   let counter = 0
   while (true) {
@@ -108,9 +120,10 @@ async function scrapNames(page) {
     }
     const profileNames = await page.evaluate(() => {
       const likedBySection = document.querySelector('div[aria-label="Curtidas"]');
+      if (!likedBySection) return []
       const profiles = likedBySection.querySelectorAll("span > a");
       const profileNames = Object.values(profiles).map((element) => {
-        const name = element.attributes.title;
+        const name = element.attributes.title.value;
         element.scrollIntoView({ block: "center", inline: "nearest" });
         element.remove();
         return name;
@@ -122,10 +135,44 @@ async function scrapNames(page) {
       console.log('  Scrap:', profileNames.length, '|', names.length)
     }
     else {
-      console.log('= Scrap all <Total', names.length + '>')
+      console.log('\n= Scrap all <Total', names.length + '>')
       break;
     }
     counter++
+    await delay(4)
+  }
+  return names
+}
+
+/* ------------------------------ Like profiles ----------------------------- */
+
+async function likeProfiles(page) {
+  console.log('\n- Like profiles')
+  const profileListString = await fs.readFile("./Storage/profiles.json");
+  const profileList = JSON.parse(profileListString);
+  for (var ix=0; ix < profileList.length; ix++) {
+    console.log('  Open', profileList[ix])
+    await page.goto("https://www.instagram.com/" + profileList[ix]);
+    await delay(5)
+    await postLikes(page)
+  }
+}
+
+async function postLikes(page) {
+  const links = await page.evaluate(() => {
+    let followers = document.querySelector('a[href*="followers"] > span').title
+    if (Number(followers) < 300) return []
+    const article = document.querySelector('article > div')
+    const htmlLinks = article.querySelectorAll('a')
+    const links = Object.values(htmlLinks).map(link => (
+      link.href
+    ))
+    return links
+  });
+  console.log(links)
+  for (var ix=0; ix < links.length; ix++) {
+    console.log('  - post', links[ix])
+    await page.goto(links[ix]);
     await delay(4)
   }
 }
