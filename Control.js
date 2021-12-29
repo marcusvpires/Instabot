@@ -160,13 +160,14 @@ async function likeProfiles(page) {
 
 async function postLikes(page) {
   const links = await page.evaluate(() => {
-    let followers = document.querySelector('a[href*="followers"] > span').title
-    if (Number(followers) < 300) return []
+    let followers = document.querySelector('a[href*="followers"] > span')
+    if (followers && Number(followers.title) < 300) return []
     const article = document.querySelector('article > div')
     const htmlLinks = article.querySelectorAll('a')
     const links = Object.values(htmlLinks).map(link => (
       link.href
     ))
+    if (links.length > 7) links.length = 7
     return links
   });
   console.log(links)
